@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using TestApi.Data;
 using TestApi.Models.User;
+using TestApi.Extensions;
+using System;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -21,18 +23,36 @@ namespace TestApi.Api.V1.Controllers
         [HttpGet]
         public IActionResult Index([FromQuery] UserGridParams paramsData)
         {
-            var temp = UsersData.Data();
+            var temp = (from u in UsersData.Data()
+                        join c in CitiesData.Data() on u.CityId equals c.CityId
+                        join s in StreetsData.Data() on u.StreetId equals s.StreetId into ss
+                        from s2 in ss.DefaultIfEmpty()
+                        select new UserGridViewModel(u, c, s2))
+                       .ToList();
 
             var query = temp.AsQueryable();
             if (!string.IsNullOrEmpty(paramsData.FirstName))
             {
-                query = query.Where(x => x.FirstName.Contains(paramsData.FirstName)); 
+                query = query.Where(x => x.FirstName.IndexOf(paramsData.FirstName, StringComparison.InvariantCultureIgnoreCase) > -1); 
             }
 
             if (!string.IsNullOrEmpty(paramsData.Email))
             {
-                query = query.Where(x => x.Email.Contains(paramsData.Email));
+                query = query.Where(x => x.Email.IndexOf(paramsData.Email, StringComparison.InvariantCultureIgnoreCase) > -1);
             }
+            
+            if (!string.IsNullOrEmpty(paramsData.SearchData))
+            {
+                var tempArray = paramsData.SearchData.Split(" ");
+
+                query = query.Where(x => x.SearchData.ContainsAll(tempArray));
+            }
+
+            if (paramsData.Age != null)
+            {
+                query = query.Where(x => x.Age == paramsData.Age);
+            }
+
             var result = query.ToList();
 
             return Ok(result);

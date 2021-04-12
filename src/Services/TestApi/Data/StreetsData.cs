@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using TestApi.Models.User;
+using TestApi.Models;
 
 namespace TestApi.Data
 {
