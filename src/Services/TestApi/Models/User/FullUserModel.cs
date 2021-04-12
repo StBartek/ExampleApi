@@ -8,8 +8,8 @@
         public int Phone { get; set; }
         public string Email { get; set; }
         public int Age { get; set; }
-        public string City { get; set; }
-        public string Street { get; set; }
+        public int CityId { get; set; }
+        public int? StreetId { get; set; }
         public string HouseNo { get; set; }
         public string FlatNo { get; set; }
     }

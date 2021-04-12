@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
+using TestApi.Data;
 using TestApi.Models.User;
 
 namespace TestApi.Api.V1.Controllers
@@ -20,48 +21,7 @@ namespace TestApi.Api.V1.Controllers
         [HttpGet]
         public IActionResult Index([FromQuery] UserGridParams paramsData)
         {
-            var temp = new List<UserModel> {
-                new UserModel
-                {
-                    FirstName = "Jan",
-                    Surname = "Kowalski",
-                    Phone = 501501501,
-                    Email = "janKowalski@onet.com",
-                    Age = 21
-                },
-                new UserModel
-                {
-                    FirstName = "Adam",
-                    Surname = "Śmiały",
-                    Phone = 501501502,
-                    Email = "jadams@onet.com",
-                    Age = 31
-                },
-                new UserModel
-                {
-                    FirstName = "Jola",
-                    Surname = "Wysoka",
-                    Phone = 501502503,
-                    Email = "jola@vp.pl",
-                    Age = 11
-                },
-                new UserModel
-                {
-                    FirstName = "Julian",
-                    Surname = "Wysoki",
-                    Phone = 501502504,
-                    Email = "julek@zywiec.pl",
-                    Age = 111
-                },
-                new UserModel
-                {
-                    FirstName = "Tadeusz",
-                    Surname = "Leniwy",
-                    Phone = 501502505,
-                    Email = "tad@len.pl",
-                    Age = 11
-                }
-            };
+            var temp = UsersData.Data();
 
             var query = temp.AsQueryable();
             if (!string.IsNullOrEmpty(paramsData.FirstName))
