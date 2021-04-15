@@ -19,7 +19,13 @@ namespace TestApi.Api.V1.Controllers
             _logger = logger;
         }
 
-        // GET: UserController
+        /// <summary>
+        /// Get users list.
+        /// </summary>
+        /// <param name="paramsData"></param>
+        /// <returns>Users list</returns>
+        /// <response code="200">Returns users list</response>
+        /// <response code="500">If database return error</response>     
         [HttpGet]
         public IActionResult Index([FromQuery] UserGridParams paramsData)
         {
@@ -58,7 +64,13 @@ namespace TestApi.Api.V1.Controllers
             return Ok(result);
         }
 
-        // GET: UserController/Details/5
+        /// <summary>
+        /// Get user by userId
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>User data</returns>
+        /// <response code="200">Returns user data</response>
+        /// <response code="404">If user not found</response>     
         [HttpGet("{id}")]
         public IActionResult Details(int id)
         {
@@ -73,9 +85,29 @@ namespace TestApi.Api.V1.Controllers
                 CityId = 1,
                 StreetId = 1
             });
-        }        
+        }
 
-        // POST: UserController/Create
+        /// <summary>
+        ///     Create new user
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     Post /
+        ///     {
+        ///        "FirstName": "jola",
+        ///        "Surname": "Nowakowska",
+        ///        "Phone": 502502502,
+        ///        "Email": "jola@o2.pl",
+        ///        "Age": 21
+        ///     }
+        ///
+        /// </remarks>
+        /// <param name="model"></param>
+        /// <returns>UserId</returns>
+        /// <response code="200">Returns UserId</response>
+        /// <response code="400">If one or more validation errors occurred</response>
+        /// <response code="500">If something goes wrong</response> 
         [HttpPost]
         public IActionResult Create(UserModel model)
         {
