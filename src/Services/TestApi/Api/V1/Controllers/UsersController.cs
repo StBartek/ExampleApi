@@ -7,6 +7,7 @@ using TestApi.Models.User;
 using TestApi.Extensions;
 using System;
 using TestApi.Models;
+using Database;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -14,10 +15,12 @@ namespace TestApi.Api.V1.Controllers
     public class UsersController : BaseController
     {
         private readonly ILogger<UsersController> _logger;
+        private readonly IDbContextFactory _dbContextFactory;
 
-        public UsersController(ILogger<UsersController> logger)
+        public UsersController(ILogger<UsersController> logger, IDbContextFactory dbContextFactory)
         {
             _logger = logger;
+            _dbContextFactory = dbContextFactory;
         }
 
         /// <summary>
@@ -30,6 +33,10 @@ namespace TestApi.Api.V1.Controllers
         [HttpGet]
         public IActionResult Index([FromQuery] UserGridParams paramsData)
         {
+            using var db = _dbContextFactory.Create();
+            var usersTest = db.Users.ToList();
+
+
             var temp = (from u in UsersData.Data()
                         join c in CitiesData.Data() on u.CityId equals c.CityId
                         join s in StreetsData.Data() on u.StreetId equals s.StreetId into ss

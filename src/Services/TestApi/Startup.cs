@@ -7,6 +7,8 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using TestApi.Helpers;
 using TestApi.Utils;
+using LinqToDB.Data;
+using Database;
 
 namespace TestApi
 {
@@ -16,8 +18,8 @@ namespace TestApi
         public Startup(IConfiguration configuration)
         {
             _config = configuration;
-            //DataConnection.DefaultSettings = new DbConnectionSettings(configuration.GetConnectionString("ConectionDb"));
-            //LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
+            DataConnection.DefaultSettings = new DbConnectionSettings(configuration.GetConnectionString("ConectionDb"));
+            LinqToDB.Common.Configuration.Linq.AllowMultipleQuery = true;
         }
 
 
@@ -31,6 +33,8 @@ namespace TestApi
             services.AddMemoryCache(); // rejestracja w IoC MemoryCache
 
             services.AddLogging();
+            
+            services.AddScoped<IDbContextFactory, DbContextFactory>();
 
             services.AddAutoMapper(typeof(Startup));
             services.AddSwagger();

@@ -1,0 +1,74 @@
+﻿<#@ template language="C#" debug="True" hostSpecific="True"                           #>
+<#@ output extension=".generated.cs"                                                  #>
+<#@ include file="$(LinqToDBT4SqlServerTemplatesDirectory)LinqToDB.SqlServer.Tools.ttinclude" #>
+<#@ include file="$(LinqToDBT4SqlServerTemplatesDirectory)PluralizationService.ttinclude"     #>
+<# //@ include file="$(ProjectDir)LinqToDB.Templates\LinqToDB.SqlServer.Tools.ttinclude" #>
+<# //@ include file="$(ProjectDir)LinqToDB.Templates\PluralizationService.ttinclude"     #>
+<#
+
+	NamespaceName						= "Database";
+	DataContextName						= "TestApiDb";               // DataContext class name. If null - database name + "DB".
+
+	//BaseDataContextClass          = null;               // Base DataContext class name. If null - LinqToDB.Data.DataConnection.
+	GenerateConstructors          = true;               // Enforce generating DataContext constructors.
+	DefaultConfiguration          = null;               // Defines default configuration for default DataContext constructor.
+
+	BaseEntityClass               = null;               // Base Entity class name. If null - none.
+	DatabaseName                  = null;               // Table database name - [Table(Database="DatabaseName")].
+	GenerateDatabaseName          = false;              // Always generate table database name, even though DatabaseName is null.
+	IncludeDefaultSchema          = true;               // Default schema name is generated - [Table(Database="Northwind", Schema="dbo", Name="Customers")]
+
+	OneToManyAssociationType      = "IEnumerable<{0}>"; // One To Many association type (for members only). Change it to "List<{0}>" if needed.
+	GenerateAssociations          = true;               // Enforce generating associations as type members.
+	GenerateBackReferences        = true;               // Enforce generating backreference associations (affects both members and extensions).
+	GenerateAssociationExtensions = false;              // Enforce generating associations as extension methods. NB: this option does not affect GenerateAssociations. This will require linq2db 1.9.0 and above
+
+	ReplaceSimilarTables          = true;               // Replaces stored procedure result class names with similar to existing table class names.
+	GenerateFindExtensions        = true;               // Generates find extension methods based on PKs information.
+	IsCompactColumns              = true;               // If true, column compact view.
+
+	PluralizeClassNames                 = false;   // If true, pluralizes table class names.
+	SingularizeClassNames               = false;    // If true, singularizes table class names.
+	PluralizeDataContextPropertyNames   = false;    // If true, pluralizes DataContext property names.
+	SingularizeDataContextPropertyNames = false;   // If true, singularizes DataContex pProperty names.
+
+	GenerateDataTypes                   = true;   // If true, generates the DataType/Length/Precision/Scale properties of the Column attribute (unless overriden by the properties below).
+	//GenerateDataTypeProperty            = true;    // If true, generates the DataType property of the Column attribute. If false, excludes generation on the DataType property even if GenerateDataTypes == true.
+	GenerateLengthProperty              = true;    // If true, generates the Length property of the Column attribute. If false, excludes generation on the Length property even if GenerateDataTypes == true.
+	GeneratePrecisionProperty           = null;    // If true, generates the Precision property of the Column attribute. If false, excludes generation on the Precision property even if GenerateDataTypes == true.
+	GenerateScaleProperty               = null;    // If true, generates the Scale property of the Column attribute. If false, excludes generation on the Scale property even if GenerateDataTypes == true.
+	GenerateDbTypes                     = false;   // If true, generates the DbType property of the Column attribute.
+
+	GenerateObsoleteAttributeForAliases = false;   // If true, generates [Obsolete] attribute for aliases.
+	IsCompactColumnAliases              = true;    // If true, column alias compact view.
+
+	NormalizeNames                      = true;    // convert some_name to SomeName for types and members
+
+	GetSchemaOptions.ExcludedSchemas =  new[] { "TestUser", "SYSSTAT" }; // Defines excluded schemas.
+	//GetSchemaOptions.IncludedSchemas = new[] { "TestUser", "SYS" };     // Defines only included schemas.
+
+	GetSchemaOptions.ExcludedCatalogs = new[] { "" }; // Defines excluded catalogs.
+	//GetSchemaOptions.IncludedCatalogs = new[] { "TestUser", "SYS" };     // Defines only included catalogs.
+
+	GetSchemaOptions.GetTables          = true;
+	GetSchemaOptions.GetProcedures      = true;
+
+	Func<string, bool, string> ToValidName         = ToValidNameDefault;          // Defines function to convert names to valid (My_Table to MyTable) 
+	Func<string, bool, string> ConvertToCompilable = ConvertToCompilableDefault;  // Converts name to c# compatible. By default removes uncompatible symbols and converts result with ToValidName
+
+	Func<ForeignKey, string> GetAssociationExtensionSinglularName = GetAssociationExtensionSinglularNameDefault; // Gets singular method extension method name for association 
+	Func<ForeignKey, string> GetAssociationExtensionPluralName    = GetAssociationExtensionPluralNameDefault;    // Gets plural method extension method name for association 
+
+	LoadSqlServerMetadata("localhost", "TestApiDb", "sa", "zaq1@wsxc");
+
+	// Remove tables which name begins with underscore
+	foreach (var kvp in Tables.ToList()){
+		//if (kvp.Value.TableName[0].ToString() == "_") 
+        //Tables.Remove(kvp.Key); // remove table
+	}
+
+	//Tables["tableName"].Columns["GroupId"].SkipOnInsert = true;
+
+
+	GenerateModel();
+#>
