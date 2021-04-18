@@ -6,6 +6,7 @@ using TestApi.Data;
 using TestApi.Models.User;
 using TestApi.Extensions;
 using System;
+using TestApi.Models;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -84,6 +85,22 @@ namespace TestApi.Api.V1.Controllers
                 FlatNo = "19",
                 CityId = 1,
                 StreetId = 1
+            });
+        }
+
+        /// <summary>
+        /// Get all addresses for user
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>User </returns>
+        /// <response code="200">Returns addresses</response>
+        /// <response code="404">If addresses not found</response>     
+        [HttpGet("{id}/addresses")]
+        public IActionResult GetAddresses(int id)
+        {
+            return Ok(new List<StreetModel> {
+                new StreetModel{ Name = "Maja" },
+                new StreetModel{ Name = "Ugorek" }
             });
         }
 
