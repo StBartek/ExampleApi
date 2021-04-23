@@ -8,6 +8,7 @@ using TestApi.Extensions;
 using System;
 using TestApi.Models;
 using Database;
+using LinqToDB;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -34,17 +35,16 @@ namespace TestApi.Api.V1.Controllers
         public IActionResult Index([FromQuery] UserGridParams paramsData)
         {
             using var db = _dbContextFactory.Create();
-            var usersTest = db.Users.ToList();
 
+            //var usersTest = db.Users.ToList();
+            //var temp = (from u in UsersData.Data()
+            //            join c in CitiesData.Data() on u.CityId equals c.CityId
+            //            join s in StreetsData.Data() on u.StreetId equals s.StreetId into ss
+            //            from s2 in ss.DefaultIfEmpty()
+            //            select new UserGridViewModel(u, c, s2))
+            //           .ToList();
 
-            var temp = (from u in UsersData.Data()
-                        join c in CitiesData.Data() on u.CityId equals c.CityId
-                        join s in StreetsData.Data() on u.StreetId equals s.StreetId into ss
-                        from s2 in ss.DefaultIfEmpty()
-                        select new UserGridViewModel(u, c, s2))
-                       .ToList();
-
-            var query = temp.AsQueryable();
+            var query = db.Users.AsQueryable();
             if (!string.IsNullOrEmpty(paramsData.FirstName))
             {
                 query = query.Where(x => x.FirstName.IndexOf(paramsData.FirstName, StringComparison.InvariantCultureIgnoreCase) > -1); 
@@ -58,7 +58,6 @@ namespace TestApi.Api.V1.Controllers
             if (!string.IsNullOrEmpty(paramsData.SearchData))
             {
                 var tempArray = paramsData.SearchData.Split(" ");
-
                 query = query.Where(x => x.SearchData.ContainsAll(tempArray));
             }
 
@@ -82,17 +81,9 @@ namespace TestApi.Api.V1.Controllers
         [HttpGet("{id}")]
         public IActionResult Details(int id)
         {
-            return Ok(new FullUserModel
-            {
-                UserId = 1,
-                FirstName = "Kamila",
-                Phone = 502502504,
-                Age = 31,
-                HouseNo = "21",
-                FlatNo = "19",
-                CityId = 1,
-                StreetId = 1
-            });
+            using var db = _dbContextFactory.Create();
+            var user = db.Users.FirstOrDefault(x => x.UserId == id);
+            return Ok(user);
         }
 
         /// <summary>
@@ -139,7 +130,37 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Błąd maila");
             }
-            return Ok(new { UserId = 31 });
+
+            var searchData = new List<string>();
+            searchData.AddIfNotEmpty(model.FirstName);
+            searchData.AddIfNotEmpty(model.Surname);
+            searchData.AddIfNotEmpty(model.Phone);
+            searchData.AddIfNotEmpty(model.Email);
+            searchData.AddIfNotEmpty(model.Age.ToString());
+
+            using var db = _dbContextFactory.Create();
+            var user = new Users
+            {
+                FirstName = model.FirstName,
+                Surname = model.Surname,
+                Phone = model.Phone,
+                Email = model.Email,
+                Age = model.Age,
+                CityId = model.CityId,
+                StreetId = model.StreetId,
+                Password = model.Password,
+                SearchData = string.Join(" ", searchData)
+            };
+
+            try
+            {
+                var id = db.InsertWithInt32Identity(user);
+                return Ok(new { UserId = id });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);                
+            }            
         }
 
         //// GET: UserController/Edit/5
@@ -167,7 +188,20 @@ namespace TestApi.Api.V1.Controllers
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            return Ok();
+            try
+            {
+                using var db = _dbContextFactory.Create();
+                var result = db.Users.Delete(x => x.UserId == id);
+                if (result > 0)
+                {
+                    return Ok();
+                }
+                return NotFound();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // POST: UserController/Delete/5

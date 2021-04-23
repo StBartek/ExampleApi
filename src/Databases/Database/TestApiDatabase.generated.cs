@@ -8,6 +8,8 @@
 #pragma warning disable 1591
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 using LinqToDB;
 using LinqToDB.Mapping;
@@ -21,7 +23,9 @@ namespace Database
 	/// </summary>
 	public partial class TestApiDb : LinqToDB.Data.DataConnection
 	{
-		public ITable<Users> Users { get { return this.GetTable<Users>(); } }
+		public ITable<Cities>  Cities  { get { return this.GetTable<Cities>(); } }
+		public ITable<Streets> Streets { get { return this.GetTable<Streets>(); } }
+		public ITable<Users>   Users   { get { return this.GetTable<Users>(); } }
 
 		public TestApiDb()
 		{
@@ -40,10 +44,108 @@ namespace Database
 		partial void InitMappingSchema();
 	}
 
+	[Table(Schema="dbo", Name="Cities")]
+	public partial class Cities
+	{
+		[Column(DataType=DataType.Int32),                PrimaryKey,  Identity] public int    CityId        { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=100), NotNull              ] public string Name          { get; set; } // nvarchar(100)
+		[Column(DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode      { get; set; } // nvarchar(6)
+		[Column(DataType=DataType.Int32),                   Nullable          ] public int?   ResidentCount { get; set; } // int
+
+		#region Associations
+
+		/// <summary>
+		/// FK_Streets_Cities_BackReference
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Streets> Streets { get; set; }
+
+		/// <summary>
+		/// FK_Users_Cities_BackReference
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Users> Users { get; set; }
+
+		#endregion
+	}
+
+	[Table(Schema="dbo", Name="Streets")]
+	public partial class Streets
+	{
+		[Column(DataType=DataType.Int32),                PrimaryKey,  Identity] public int    StreetId { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=250), NotNull              ] public string Name     { get; set; } // nvarchar(250)
+		[Column(DataType=DataType.Int32),                NotNull              ] public int    CityId   { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode { get; set; } // nvarchar(6)
+
+		#region Associations
+
+		/// <summary>
+		/// FK_Streets_Cities
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Streets_Cities", BackReferenceName="Streets")]
+		public Cities City { get; set; }
+
+		/// <summary>
+		/// FK_Users_Streets_BackReference
+		/// </summary>
+		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Users> Users { get; set; }
+
+		#endregion
+	}
+
 	[Table(Schema="dbo", Name="Users")]
 	public partial class Users
 	{
-		[Column(DataType=DataType.Int32), NotNull] public int UserId { get; set; } // int
+		[Column(DataType=DataType.Int32),                 PrimaryKey,  Identity] public int    UserId     { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string FirstName  { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Surname    { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=250),  NotNull              ] public string Email      { get; set; } // nvarchar(250)
+		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   Age        { get; set; } // int
+		[Column(DataType=DataType.Int32),                 NotNull              ] public int    CityId     { get; set; } // int
+		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   StreetId   { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string HouseNo    { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string FlatNo     { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Password   { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=2000),    Nullable          ] public string SearchData { get; set; } // nvarchar(2000)
+		[Column(DataType=DataType.NVarChar, Length=12),      Nullable          ] public string Phone      { get; set; } // nvarchar(12)
+
+		#region Associations
+
+		/// <summary>
+		/// FK_Users_Cities
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Users_Cities", BackReferenceName="Users")]
+		public Cities City { get; set; }
+
+		/// <summary>
+		/// FK_Users_Streets
+		/// </summary>
+		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.ManyToOne, KeyName="FK_Users_Streets", BackReferenceName="Users")]
+		public Streets Street { get; set; }
+
+		#endregion
+	}
+
+	public static partial class TableExtensions
+	{
+		public static Cities Find(this ITable<Cities> table, int CityId)
+		{
+			return table.FirstOrDefault(t =>
+				t.CityId == CityId);
+		}
+
+		public static Streets Find(this ITable<Streets> table, int StreetId)
+		{
+			return table.FirstOrDefault(t =>
+				t.StreetId == StreetId);
+		}
+
+		public static Users Find(this ITable<Users> table, int UserId)
+		{
+			return table.FirstOrDefault(t =>
+				t.UserId == UserId);
+		}
 	}
 }
 
