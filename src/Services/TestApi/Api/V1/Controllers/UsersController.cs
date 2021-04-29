@@ -86,23 +86,6 @@ namespace TestApi.Api.V1.Controllers
             return NotFound();
         }
 
-        //TODO 
-        ///// <summary>
-        ///// Get all addresses for user
-        ///// </summary>
-        ///// <param name="id"></param>
-        ///// <returns>User </returns>
-        ///// <response code="200">Returns addresses</response>
-        ///// <response code="404">If addresses not found</response>     
-        //[HttpGet("{id}/addresses")]
-        //public IActionResult GetAddresses(int id)
-        //{
-        //    return Ok(new List<StreetModel> {
-        //        new StreetModel{ Name = "Maja" },
-        //        new StreetModel{ Name = "Ugorek" }
-        //    });
-        //}
-
         /// <summary>
         ///     Create new user
         /// </summary>
@@ -125,7 +108,7 @@ namespace TestApi.Api.V1.Controllers
         /// <response code="400">If one or more validation errors occurred</response>
         /// <response code="500">If something goes wrong</response> 
         [HttpPost]
-        public IActionResult Create(UserModel model)
+        public IActionResult Create(CreateUserRequest model)
         {
             string pattern = @"^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|" + @"([-a-z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)*)(?<!\.)" + @"@[a-z0-9][\w\.-]*[a-z0-9]\.[a-z][a-z\.]*[a-z]$";
             var regex = new Regex(pattern, RegexOptions.IgnoreCase);
@@ -204,7 +187,6 @@ namespace TestApi.Api.V1.Controllers
         //    }
         //}
 
-        // GET: UserController/Delete/5
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -222,6 +204,59 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest(ex.Message);
             }
-        }       
+        }
+        
+        [HttpPost("{id}/address")]
+        public IActionResult AddAddress(int id, AddAddressRequest model)
+        {
+            if(id != model.UserId)
+            {
+                return BadRequest();
+            }
+
+            using var db = _dbContextFactory.Create();
+            if (!db.Users.Any(x => x.UserId == model.UserId))
+            {
+                return BadRequest("Użytkownik nie istnieje.");
+            }
+            if(model.AddressId == Guid.Empty || !db.Addresses.Any(x => x.AddressId == model.AddressId))
+            {
+                return BadRequest("Adres nie istnieje.");
+            }
+
+            var userAddress = new UsersLAddresses
+            {
+                UserId = model.UserId,
+                AddressId = model.AddressId
+            };
+            
+            return Ok(db.Insert(userAddress) > 0);
+        }
+
+        [HttpDelete("{id}/address")]
+        public IActionResult DeleteAddress(int id, DeleteAddressRequest model)
+        {
+            if (id != model.UserId)
+            {
+                return BadRequest();
+            }
+
+            using var db = _dbContextFactory.Create();
+            if (!db.Users.Any(x => x.UserId == model.UserId))
+            {
+                return BadRequest("Użytkownik nie istnieje.");
+            }
+
+            var deletedCount = db.UsersLAddresses.Delete(x => x.UserId == model.UserId && x.AddressId == model.AddressId);
+            return Ok(deletedCount > 0);
+        }
+
+        [HttpGet("{id}/address")]
+        public IActionResult GetAddresses(int id)
+        {
+            using var db = _dbContextFactory.Create();
+            var userAddresses = db.UsersLAddresses.Where(x => x.UserId == id).ToList();
+            return Ok(userAddresses);
+        }
     }
 }

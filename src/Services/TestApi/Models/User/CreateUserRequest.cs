@@ -1,6 +1,6 @@
 ﻿namespace TestApi.Models.User
 {
-    public class UserModel
+    public class CreateUserRequest
     {
         public string FirstName { get; set; }
         public string Surname { get; set; }

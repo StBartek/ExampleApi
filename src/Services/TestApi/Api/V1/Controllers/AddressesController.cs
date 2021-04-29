@@ -65,7 +65,7 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Miasto nie istnieje.");
             }
-            if (!model.StreetId.HasValue || !db.Streets.Any(x => x.StreetId == model.StreetId))
+            if (model.StreetId.HasValue && !db.Streets.Any(x => x.StreetId == model.StreetId))
             {
                 return BadRequest("Ulica nie istnieje.");
             }
