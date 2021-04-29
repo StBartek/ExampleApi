@@ -7,7 +7,7 @@ namespace TestApi.Extensions
     {
         public static bool ContainsAll(this string source, params string[] values)
         {
-            return values.All(x => source.IndexOf(x, StringComparison.InvariantCultureIgnoreCase) > -1);
+            return values.All(x => source.Contains(x, StringComparison.InvariantCultureIgnoreCase));
         }
     }
 }

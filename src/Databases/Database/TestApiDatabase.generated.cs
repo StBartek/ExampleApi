@@ -23,9 +23,13 @@ namespace Database
 	/// </summary>
 	public partial class TestApiDb : LinqToDB.Data.DataConnection
 	{
-		public ITable<Cities>  Cities  { get { return this.GetTable<Cities>(); } }
-		public ITable<Streets> Streets { get { return this.GetTable<Streets>(); } }
-		public ITable<Users>   Users   { get { return this.GetTable<Users>(); } }
+		public ITable<Addresses>       Addresses       { get { return this.GetTable<Addresses>(); } }
+		public ITable<Cities>          Cities          { get { return this.GetTable<Cities>(); } }
+		public ITable<Contacts>        Contacts        { get { return this.GetTable<Contacts>(); } }
+		public ITable<DicContactType>  DicContactType  { get { return this.GetTable<DicContactType>(); } }
+		public ITable<Streets>         Streets         { get { return this.GetTable<Streets>(); } }
+		public ITable<Users>           Users           { get { return this.GetTable<Users>(); } }
+		public ITable<UsersLAddresses> UsersLAddresses { get { return this.GetTable<UsersLAddresses>(); } }
 
 		public TestApiDb()
 		{
@@ -42,6 +46,26 @@ namespace Database
 
 		partial void InitDataContext  ();
 		partial void InitMappingSchema();
+	}
+
+	[Table(Schema="dbo", Name="Addresses")]
+	public partial class Addresses
+	{
+		[Column(DataType=DataType.Guid),                PrimaryKey,  NotNull] public Guid   AddressId { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Int32),                            NotNull] public int    CityId    { get; set; } // int
+		[Column(DataType=DataType.Int32),                  Nullable         ] public int?   StreetId  { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=50),    Nullable         ] public string HouseNo   { get; set; } // nvarchar(50)
+		[Column(DataType=DataType.NVarChar, Length=50),    Nullable         ] public string FlatNo    { get; set; } // nvarchar(50)
+
+		#region Associations
+
+		/// <summary>
+		/// FK_UsersLAddresses_Addresses_BackReference
+		/// </summary>
+		[Association(ThisKey="AddressId", OtherKey="AddressId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<UsersLAddresses> UsersLAddresses { get; set; }
+
+		#endregion
 	}
 
 	[Table(Schema="dbo", Name="Cities")]
@@ -65,6 +89,48 @@ namespace Database
 		/// </summary>
 		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
 		public IEnumerable<Users> Users { get; set; }
+
+		#endregion
+	}
+
+	[Table(Schema="dbo", Name="Contacts")]
+	public partial class Contacts
+	{
+		[Column(DataType=DataType.Int32),                PrimaryKey,  Identity] public int    ContactId { get; set; } // int
+		[Column(DataType=DataType.Int32),                NotNull              ] public int    TypeId    { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=250), NotNull              ] public string Value     { get; set; } // nvarchar(250)
+		[Column(DataType=DataType.Int32),                   Nullable          ] public int?   UserId    { get; set; } // int
+
+		#region Associations
+
+		/// <summary>
+		/// FK_Contacts_DicContactType
+		/// </summary>
+		[Association(ThisKey="TypeId", OtherKey="DicContactTypeId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Contacts_DicContactType", BackReferenceName="Contacts")]
+		public DicContactType Type { get; set; }
+
+		/// <summary>
+		/// FK_Contacts_Users
+		/// </summary>
+		[Association(ThisKey="UserId", OtherKey="UserId", CanBeNull=true, Relationship=Relationship.ManyToOne, KeyName="FK_Contacts_Users", BackReferenceName="Contacts")]
+		public Users User { get; set; }
+
+		#endregion
+	}
+
+	[Table(Schema="dbo", Name="DicContactType")]
+	public partial class DicContactType
+	{
+		[Column(DataType=DataType.Int32),               PrimaryKey, Identity] public int    DicContactTypeId { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=50), NotNull             ] public string Name             { get; set; } // nvarchar(50)
+
+		#region Associations
+
+		/// <summary>
+		/// FK_Contacts_DicContactType_BackReference
+		/// </summary>
+		[Association(ThisKey="DicContactTypeId", OtherKey="TypeId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Contacts> Contacts { get; set; }
 
 		#endregion
 	}
@@ -119,20 +185,73 @@ namespace Database
 		public Cities City { get; set; }
 
 		/// <summary>
+		/// FK_Contacts_Users_BackReference
+		/// </summary>
+		[Association(ThisKey="UserId", OtherKey="UserId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Contacts> Contacts { get; set; }
+
+		/// <summary>
 		/// FK_Users_Streets
 		/// </summary>
 		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.ManyToOne, KeyName="FK_Users_Streets", BackReferenceName="Users")]
 		public Streets Street { get; set; }
+
+		/// <summary>
+		/// FK_UsersLAddresses_Users_BackReference
+		/// </summary>
+		[Association(ThisKey="UserId", OtherKey="UserId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<UsersLAddresses> UsersLAddresses { get; set; }
+
+		#endregion
+	}
+
+	[Table(Schema="dbo", Name="UsersLAddresses")]
+	public partial class UsersLAddresses
+	{
+		[Column(DataType=DataType.Int32), NotNull] public int  UserId    { get; set; } // int
+		[Column(DataType=DataType.Guid),  NotNull] public Guid AddressId { get; set; } // uniqueidentifier
+
+		#region Associations
+
+		/// <summary>
+		/// FK_UsersLAddresses_Addresses
+		/// </summary>
+		[Association(ThisKey="AddressId", OtherKey="AddressId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_UsersLAddresses_Addresses", BackReferenceName="UsersLAddresses")]
+		public Addresses Address { get; set; }
+
+		/// <summary>
+		/// FK_UsersLAddresses_Users
+		/// </summary>
+		[Association(ThisKey="UserId", OtherKey="UserId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_UsersLAddresses_Users", BackReferenceName="UsersLAddresses")]
+		public Users User { get; set; }
 
 		#endregion
 	}
 
 	public static partial class TableExtensions
 	{
+		public static Addresses Find(this ITable<Addresses> table, Guid AddressId)
+		{
+			return table.FirstOrDefault(t =>
+				t.AddressId == AddressId);
+		}
+
 		public static Cities Find(this ITable<Cities> table, int CityId)
 		{
 			return table.FirstOrDefault(t =>
 				t.CityId == CityId);
+		}
+
+		public static Contacts Find(this ITable<Contacts> table, int ContactId)
+		{
+			return table.FirstOrDefault(t =>
+				t.ContactId == ContactId);
+		}
+
+		public static DicContactType Find(this ITable<DicContactType> table, int DicContactTypeId)
+		{
+			return table.FirstOrDefault(t =>
+				t.DicContactTypeId == DicContactTypeId);
 		}
 
 		public static Streets Find(this ITable<Streets> table, int StreetId)
