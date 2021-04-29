@@ -9,6 +9,7 @@ using System;
 using TestApi.Models;
 using Database;
 using LinqToDB;
+using System.Text.RegularExpressions;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -36,29 +37,20 @@ namespace TestApi.Api.V1.Controllers
         {
             using var db = _dbContextFactory.Create();
 
-            //var usersTest = db.Users.ToList();
-            //var temp = (from u in UsersData.Data()
-            //            join c in CitiesData.Data() on u.CityId equals c.CityId
-            //            join s in StreetsData.Data() on u.StreetId equals s.StreetId into ss
-            //            from s2 in ss.DefaultIfEmpty()
-            //            select new UserGridViewModel(u, c, s2))
-            //           .ToList();
-
             var query = db.Users.AsQueryable();
             if (!string.IsNullOrEmpty(paramsData.FirstName))
             {
-                query = query.Where(x => x.FirstName.IndexOf(paramsData.FirstName, StringComparison.InvariantCultureIgnoreCase) > -1); 
+                query = query.Where(x => x.FirstName.Contains(paramsData.FirstName, StringComparison.InvariantCultureIgnoreCase)); 
             }
 
             if (!string.IsNullOrEmpty(paramsData.Email))
             {
-                query = query.Where(x => x.Email.IndexOf(paramsData.Email, StringComparison.InvariantCultureIgnoreCase) > -1);
+                query = query.Where(x => x.Email.Contains(paramsData.Email, StringComparison.InvariantCultureIgnoreCase));
             }
             
             if (!string.IsNullOrEmpty(paramsData.SearchData))
             {
-                var tempArray = paramsData.SearchData.Split(" ");
-                query = query.Where(x => x.SearchData.ContainsAll(tempArray));
+                query = query.Where(x => x.SearchData.Contains(paramsData.SearchData, StringComparison.InvariantCultureIgnoreCase));
             }
 
             if (paramsData.Age != null)
@@ -82,25 +74,34 @@ namespace TestApi.Api.V1.Controllers
         public IActionResult Details(int id)
         {
             using var db = _dbContextFactory.Create();
-            var user = db.Users.FirstOrDefault(x => x.UserId == id);
-            return Ok(user);
+            var user = db.Users
+                .LoadWith(x => x.City)
+                .LoadWith(x => x.Street)
+                .FirstOrDefault(x => x.UserId == id);
+
+            if(user is Users)
+            {
+                return Ok(new UserGridViewModel(user));
+            }
+            return NotFound();
         }
 
-        /// <summary>
-        /// Get all addresses for user
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns>User </returns>
-        /// <response code="200">Returns addresses</response>
-        /// <response code="404">If addresses not found</response>     
-        [HttpGet("{id}/addresses")]
-        public IActionResult GetAddresses(int id)
-        {
-            return Ok(new List<StreetModel> {
-                new StreetModel{ Name = "Maja" },
-                new StreetModel{ Name = "Ugorek" }
-            });
-        }
+        //TODO 
+        ///// <summary>
+        ///// Get all addresses for user
+        ///// </summary>
+        ///// <param name="id"></param>
+        ///// <returns>User </returns>
+        ///// <response code="200">Returns addresses</response>
+        ///// <response code="404">If addresses not found</response>     
+        //[HttpGet("{id}/addresses")]
+        //public IActionResult GetAddresses(int id)
+        //{
+        //    return Ok(new List<StreetModel> {
+        //        new StreetModel{ Name = "Maja" },
+        //        new StreetModel{ Name = "Ugorek" }
+        //    });
+        //}
 
         /// <summary>
         ///     Create new user
@@ -126,9 +127,29 @@ namespace TestApi.Api.V1.Controllers
         [HttpPost]
         public IActionResult Create(UserModel model)
         {
-            if (!model.Email.Contains("@"))
+            string pattern = @"^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|" + @"([-a-z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)*)(?<!\.)" + @"@[a-z0-9][\w\.-]*[a-z0-9]\.[a-z][a-z\.]*[a-z]$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            if (!regex.IsMatch(model.Email ?? string.Empty))
             {
-                return BadRequest("Błąd maila");
+                return BadRequest("Nieprawidłowy adres email.");
+            }
+            if(string.IsNullOrEmpty(model.FirstName) || model.FirstName.Length < 3)
+            {
+                return BadRequest("Imię powinno mieć minimum 3 znaki");
+            }
+            if (string.IsNullOrEmpty(model.Surname) || model.Surname.Length < 3)
+            {
+                return BadRequest("Nazwisko powinno mieć minimum 3 znaki.");
+            }
+            if (string.IsNullOrEmpty(model.Password) || model.Password.Length < 6)
+            {
+                return BadRequest("Hasło powinno mieć minimum 6 znaków.");
+            }
+
+            using var db = _dbContextFactory.Create();
+            if (!db.Cities.Any(x => x.CityId == model.CityId))
+            {
+                return BadRequest("Miasto nie istnieje.");
             }
 
             var searchData = new List<string>();
@@ -138,19 +159,25 @@ namespace TestApi.Api.V1.Controllers
             searchData.AddIfNotEmpty(model.Email);
             searchData.AddIfNotEmpty(model.Age.ToString());
 
-            using var db = _dbContextFactory.Create();
             var user = new Users
             {
                 FirstName = model.FirstName,
                 Surname = model.Surname,
                 Phone = model.Phone,
                 Email = model.Email,
-                Age = model.Age,
                 CityId = model.CityId,
-                StreetId = model.StreetId,
                 Password = model.Password,
                 SearchData = string.Join(" ", searchData)
             };
+
+            if(model.StreetId > 0)
+            {
+                user.StreetId = model.StreetId;
+            }
+            if (model.Age.GetValueOrDefault() > 0)
+            {
+                user.Age = model.Age;
+            }
 
             try
             {
@@ -163,15 +190,8 @@ namespace TestApi.Api.V1.Controllers
             }            
         }
 
-        //// GET: UserController/Edit/5
-        //public IActionResult Edit(int id)
-        //{
-        //    return Ok();
-        //}
-
         //// POST: UserController/Edit/5
         //[HttpPost]
-        //[ValidateAntiForgeryToken]
         //public IActionResult Edit(int id, IFormCollection collection)
         //{
         //    try
@@ -202,21 +222,6 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest(ex.Message);
             }
-        }
-
-        // POST: UserController/Delete/5
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Delete(int id, IFormCollection collection)
-        //{
-        //    try
-        //    {
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    catch
-        //    {
-        //        return Ok();
-        //    }
-        //}
+        }       
     }
 }
