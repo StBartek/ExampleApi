@@ -10,6 +10,7 @@ using TestApi.Models;
 using Database;
 using LinqToDB;
 using System.Text.RegularExpressions;
+using TestApi.Models.Addresses;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -75,8 +76,6 @@ namespace TestApi.Api.V1.Controllers
         {
             using var db = _dbContextFactory.Create();
             var user = db.Users
-                .LoadWith(x => x.City)
-                .LoadWith(x => x.Street)
                 .FirstOrDefault(x => x.UserId == id);
 
             if(user is Users)
@@ -148,14 +147,14 @@ namespace TestApi.Api.V1.Controllers
                 Surname = model.Surname,
                 Phone = model.Phone,
                 Email = model.Email,
-                CityId = model.CityId,
+                //CityId = model.CityId,
                 Password = model.Password,
                 SearchData = string.Join(" ", searchData)
             };
 
             if(model.StreetId > 0)
             {
-                user.StreetId = model.StreetId;
+                //user.StreetId = model.StreetId;
             }
             if (model.Age.GetValueOrDefault() > 0)
             {
@@ -206,7 +205,7 @@ namespace TestApi.Api.V1.Controllers
             }
         }
         
-        [HttpPost("{id}/address")]
+        [HttpPost("{id}/addresses")]
         public IActionResult AddAddress(int id, AddAddressRequest model)
         {
             if(id != model.UserId)
@@ -233,7 +232,7 @@ namespace TestApi.Api.V1.Controllers
             return Ok(db.Insert(userAddress) > 0);
         }
 
-        [HttpDelete("{id}/address")]
+        [HttpDelete("{id}/addresses")]
         public IActionResult DeleteAddress(int id, DeleteAddressRequest model)
         {
             if (id != model.UserId)
@@ -251,11 +250,16 @@ namespace TestApi.Api.V1.Controllers
             return Ok(deletedCount > 0);
         }
 
-        [HttpGet("{id}/address")]
+        [HttpGet("{id}/addresses")]
         public IActionResult GetAddresses(int id)
         {
             using var db = _dbContextFactory.Create();
-            var userAddresses = db.UsersLAddresses.Where(x => x.UserId == id).ToList();
+            var userAddresses = db.UsersLAddresses
+                .LoadWith(x => x.Address.City)
+                .LoadWith(x => x.Address.Street)
+                .Where(x => x.UserId == id)
+                .Select(x => new BaseAddressViewModel(x.Address))
+                .ToList();
             return Ok(userAddresses);
         }
     }

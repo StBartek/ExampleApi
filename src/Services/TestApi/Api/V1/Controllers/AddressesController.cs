@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TestApi.Models.Addresses;
+using TestApi.Models.User;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -27,7 +28,12 @@ namespace TestApi.Api.V1.Controllers
         public ActionResult Index([FromQuery] AddressGridParams gridParams)
         {
             using var db = _dbContextFactory.Create();
-            var query = db.Addresses.AsQueryable();
+            var query = db.Addresses
+                .LoadWith(x => x.City)
+                .LoadWith(x => x.Street)
+                .LoadWith(x => x.UsersLAddresses)
+                .AsQueryable();
+
             if (gridParams.CityId.HasValue)
             {
                 query = query.Where(x => x.CityId == gridParams.CityId);
@@ -40,18 +46,24 @@ namespace TestApi.Api.V1.Controllers
             {
                 query = query.Where(x => x.HouseNo.Contains(gridParams.HouseNo));
             }
-            return Ok(query.ToList());
+
+            var result = query.Select(x => new AddressGridViewModel(x)).ToList();
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public ActionResult Details(Guid id)
         {
             using var db = _dbContextFactory.Create();
-            var address = db.Addresses.FirstOrDefault(x => x.AddressId == id);
+            var address = db.Addresses
+                .LoadWith(x => x.City)
+                .LoadWith(x => x.Street)
+                .LoadWith(x => x.UsersLAddresses.FirstOrDefault().User.Contacts)
+                .FirstOrDefault(x => x.AddressId == id);
 
             if (address is Addresses)
             {
-                return Ok(address);
+                return Ok(new FullAddressViewModel(address));
             }
             return NotFound();
         } 
@@ -125,6 +137,19 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpGet("{id}/users")]
+        public IActionResult GetUsers(Guid id)
+        {
+            using var db = _dbContextFactory.Create();
+            var userAddresses = db.UsersLAddresses
+                .LoadWith(x => x.User.Contacts)
+                .Where(x => x.AddressId == id)
+                .Select(x => new UserWithContactViewModel(x.User))
+                .ToList();
+
+            return Ok(userAddresses);
         }
     }
 }

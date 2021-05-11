@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TestApi.Models.Contacts;
 using LinqToDB;
+using TestApi.Models.User;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -25,7 +26,10 @@ namespace TestApi.Api.V1.Controllers
         public IActionResult Index([FromQuery] ContactGridParams paramsData)
         {
             using var db = _dbContextFactory.Create();
-            var query = db.Contacts.AsQueryable();
+            var query = db.Contacts
+                .LoadWith(x => x.User)
+                .AsQueryable();
+
             if (paramsData.TypeId.HasValue)
             {
                 query = query.Where(x => x.TypeId == paramsData.TypeId);
@@ -38,18 +42,20 @@ namespace TestApi.Api.V1.Controllers
             {
                 query = query.Where(x => x.Value.Contains(paramsData.Value, StringComparison.InvariantCultureIgnoreCase));
             }
-            return Ok(query.ToList());
+            return Ok(query.Select(x => new UserWithContactViewModel(x)).ToList());
         }
 
         [HttpGet("{id}")]
         public IActionResult Details(int id)
         {
             using var db = _dbContextFactory.Create();
-            var contact = db.Contacts.FirstOrDefault(x => x.ContactId == id);
+            var contact = db.Contacts
+                .LoadWith(x => x.User)
+                .FirstOrDefault(x => x.ContactId == id);
 
             if (contact is Contacts)
             {
-                return Ok(contact);
+                return Ok(new UserWithContactViewModel(contact));
             }
             return NotFound();
         }

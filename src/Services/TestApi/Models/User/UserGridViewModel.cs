@@ -29,13 +29,13 @@ namespace TestApi.Models.User
             Phone = user.Phone;
             Email = user.Email;
             Age = user.Age;
-            CityId = user.CityId;
-            CityName = user.City.Name;
-            StreetId = user.StreetId;
-            StreetName = user.Street?.Name;
+            //CityId = user.CityId;
+            //CityName = user.City.Name;
+            //StreetId = user.StreetId;
+            //StreetName = user.Street?.Name;
             HouseNo = user.HouseNo;
             FlatNo = user.FlatNo;
-            PostCode = user.Street is Streets ? user.Street.PostCode : user.City.PostCode;
+            //PostCode = user.Street is Streets ? user.Street.PostCode : user.City.PostCode;
         }
 
         public int UserId { get; set; }

@@ -25,6 +25,7 @@ namespace Database
 	{
 		public ITable<Addresses>       Addresses       { get { return this.GetTable<Addresses>(); } }
 		public ITable<Cities>          Cities          { get { return this.GetTable<Cities>(); } }
+		public ITable<Claims>          Claims          { get { return this.GetTable<Claims>(); } }
 		public ITable<Contacts>        Contacts        { get { return this.GetTable<Contacts>(); } }
 		public ITable<DicContactType>  DicContactType  { get { return this.GetTable<DicContactType>(); } }
 		public ITable<Streets>         Streets         { get { return this.GetTable<Streets>(); } }
@@ -60,6 +61,18 @@ namespace Database
 		#region Associations
 
 		/// <summary>
+		/// FK_Addresses_Cities
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Addresses_Cities", BackReferenceName="Addresses")]
+		public Cities City { get; set; }
+
+		/// <summary>
+		/// FK_Addresses_Streets
+		/// </summary>
+		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.ManyToOne, KeyName="FK_Addresses_Streets", BackReferenceName="Addresses")]
+		public Streets Street { get; set; }
+
+		/// <summary>
 		/// FK_UsersLAddresses_Addresses_BackReference
 		/// </summary>
 		[Association(ThisKey="AddressId", OtherKey="AddressId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
@@ -79,18 +92,28 @@ namespace Database
 		#region Associations
 
 		/// <summary>
+		/// FK_Addresses_Cities_BackReference
+		/// </summary>
+		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Addresses> Addresses { get; set; }
+
+		/// <summary>
 		/// FK_Streets_Cities_BackReference
 		/// </summary>
 		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
 		public IEnumerable<Streets> Streets { get; set; }
 
-		/// <summary>
-		/// FK_Users_Cities_BackReference
-		/// </summary>
-		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
-		public IEnumerable<Users> Users { get; set; }
-
 		#endregion
+	}
+
+	[Table(Schema="dbo", Name="Claims")]
+	public partial class Claims
+	{
+		[Column(DataType=DataType.Guid),                            PrimaryKey, NotNull] public Guid     ClaimId     { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Int32),                                       NotNull] public int      TypeId      { get; set; } // int
+		[Column(DataType=DataType.DateTime),                                    NotNull] public DateTime CreatedDate { get; set; } // datetime
+		[Column(DataType=DataType.Decimal,  Precision=18, Scale=2),             NotNull] public decimal  Amount      { get; set; } // decimal(18, 2)
+		[Column(DataType=DataType.NChar,    Length=10),                         NotNull] public string   Description { get; set; } // nchar(10)
 	}
 
 	[Table(Schema="dbo", Name="Contacts")]
@@ -146,16 +169,16 @@ namespace Database
 		#region Associations
 
 		/// <summary>
+		/// FK_Addresses_Streets_BackReference
+		/// </summary>
+		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<Addresses> Addresses { get; set; }
+
+		/// <summary>
 		/// FK_Streets_Cities
 		/// </summary>
 		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Streets_Cities", BackReferenceName="Streets")]
 		public Cities City { get; set; }
-
-		/// <summary>
-		/// FK_Users_Streets_BackReference
-		/// </summary>
-		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
-		public IEnumerable<Users> Users { get; set; }
 
 		#endregion
 	}
@@ -168,8 +191,6 @@ namespace Database
 		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Surname    { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=250),  NotNull              ] public string Email      { get; set; } // nvarchar(250)
 		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   Age        { get; set; } // int
-		[Column(DataType=DataType.Int32),                 NotNull              ] public int    CityId     { get; set; } // int
-		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   StreetId   { get; set; } // int
 		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string HouseNo    { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string FlatNo     { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Password   { get; set; } // nvarchar(50)
@@ -179,22 +200,10 @@ namespace Database
 		#region Associations
 
 		/// <summary>
-		/// FK_Users_Cities
-		/// </summary>
-		[Association(ThisKey="CityId", OtherKey="CityId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_Users_Cities", BackReferenceName="Users")]
-		public Cities City { get; set; }
-
-		/// <summary>
 		/// FK_Contacts_Users_BackReference
 		/// </summary>
 		[Association(ThisKey="UserId", OtherKey="UserId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
 		public IEnumerable<Contacts> Contacts { get; set; }
-
-		/// <summary>
-		/// FK_Users_Streets
-		/// </summary>
-		[Association(ThisKey="StreetId", OtherKey="StreetId", CanBeNull=true, Relationship=Relationship.ManyToOne, KeyName="FK_Users_Streets", BackReferenceName="Users")]
-		public Streets Street { get; set; }
 
 		/// <summary>
 		/// FK_UsersLAddresses_Users_BackReference
@@ -208,8 +217,9 @@ namespace Database
 	[Table(Schema="dbo", Name="UsersLAddresses")]
 	public partial class UsersLAddresses
 	{
-		[Column(DataType=DataType.Int32), NotNull] public int  UserId    { get; set; } // int
-		[Column(DataType=DataType.Guid),  NotNull] public Guid AddressId { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Guid),     Nullable] public Guid? UserAddressId { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Int32), NotNull    ] public int   UserId        { get; set; } // int
+		[Column(DataType=DataType.Guid),  NotNull    ] public Guid  AddressId     { get; set; } // uniqueidentifier
 
 		#region Associations
 
@@ -240,6 +250,12 @@ namespace Database
 		{
 			return table.FirstOrDefault(t =>
 				t.CityId == CityId);
+		}
+
+		public static Claims Find(this ITable<Claims> table, Guid ClaimId)
+		{
+			return table.FirstOrDefault(t =>
+				t.ClaimId == ClaimId);
 		}
 
 		public static Contacts Find(this ITable<Contacts> table, int ContactId)
