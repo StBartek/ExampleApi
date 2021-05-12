@@ -84,10 +84,11 @@ namespace Database
 	[Table(Schema="dbo", Name="Cities")]
 	public partial class Cities
 	{
-		[Column(DataType=DataType.Int32),                PrimaryKey,  Identity] public int    CityId        { get; set; } // int
-		[Column(DataType=DataType.NVarChar, Length=100), NotNull              ] public string Name          { get; set; } // nvarchar(100)
-		[Column(DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode      { get; set; } // nvarchar(6)
-		[Column(DataType=DataType.Int32),                   Nullable          ] public int?   ResidentCount { get; set; } // int
+		[Column(             DataType=DataType.Int32),                PrimaryKey,  Identity] public int    CityId        { get; set; } // int
+		[Column(             DataType=DataType.NVarChar, Length=100), NotNull              ] public string Name          { get; set; } // nvarchar(100)
+		[Column(             DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode      { get; set; } // nvarchar(6)
+		[Column(             DataType=DataType.Int32),                   Nullable          ] public int?   ResidentCount { get; set; } // int
+		[Column("moja dupa", DataType=DataType.NChar,    Length=10),     Nullable          ] public string MojaDupa      { get; set; } // nchar(10)
 
 		#region Associations
 
@@ -191,8 +192,6 @@ namespace Database
 		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Surname    { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=250),  NotNull              ] public string Email      { get; set; } // nvarchar(250)
 		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   Age        { get; set; } // int
-		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string HouseNo    { get; set; } // nvarchar(50)
-		[Column(DataType=DataType.NVarChar, Length=50),      Nullable          ] public string FlatNo     { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Password   { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=2000),    Nullable          ] public string SearchData { get; set; } // nvarchar(2000)
 		[Column(DataType=DataType.NVarChar, Length=12),      Nullable          ] public string Phone      { get; set; } // nvarchar(12)
@@ -217,9 +216,8 @@ namespace Database
 	[Table(Schema="dbo", Name="UsersLAddresses")]
 	public partial class UsersLAddresses
 	{
-		[Column(DataType=DataType.Guid),     Nullable] public Guid? UserAddressId { get; set; } // uniqueidentifier
-		[Column(DataType=DataType.Int32), NotNull    ] public int   UserId        { get; set; } // int
-		[Column(DataType=DataType.Guid),  NotNull    ] public Guid  AddressId     { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Int32), NotNull] public int  UserId    { get; set; } // int
+		[Column(DataType=DataType.Guid),  NotNull] public Guid AddressId { get; set; } // uniqueidentifier
 
 		#region Associations
 

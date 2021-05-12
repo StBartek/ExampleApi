@@ -33,8 +33,8 @@ namespace TestApi.Models.User
             //CityName = user.City.Name;
             //StreetId = user.StreetId;
             //StreetName = user.Street?.Name;
-            HouseNo = user.HouseNo;
-            FlatNo = user.FlatNo;
+            //HouseNo = user.HouseNo;
+            //FlatNo = user.FlatNo;
             //PostCode = user.Street is Streets ? user.Street.PostCode : user.City.PostCode;
         }
 

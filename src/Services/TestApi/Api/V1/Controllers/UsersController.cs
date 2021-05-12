@@ -29,8 +29,6 @@ namespace TestApi.Api.V1.Controllers
         /// <summary>
         /// Get users list.
         /// </summary>
-        /// <param name="paramsData"></param>
-        /// <returns>Users list</returns>
         /// <response code="200">Returns users list</response>
         /// <response code="500">If database return error</response>     
         [HttpGet]
@@ -67,8 +65,7 @@ namespace TestApi.Api.V1.Controllers
         /// <summary>
         /// Get user by userId
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns>User data</returns>
+        /// <param name="id">User id</param>
         /// <response code="200">Returns user data</response>
         /// <response code="404">If user not found</response>     
         [HttpGet("{id}")]
@@ -86,23 +83,23 @@ namespace TestApi.Api.V1.Controllers
         }
 
         /// <summary>
-        ///     Create new user
+        /// Create new user
         /// </summary>
         /// <remarks>
         /// Sample request:
         ///
         ///     Post /
         ///     {
-        ///        "FirstName": "jola",
-        ///        "Surname": "Nowakowska",
-        ///        "Phone": 502502502,
-        ///        "Email": "jola@o2.pl",
-        ///        "Age": 21
+        ///        "firstName": "jola",
+        ///        "surname": "Nowakowska",
+        ///        "phone": 502502502,
+        ///        "email": "jola@o2.pl",
+        ///        "age": 21,
+        ///        "password": "alamakota"
         ///     }
         ///
         /// </remarks>
         /// <param name="model"></param>
-        /// <returns>UserId</returns>
         /// <response code="200">Returns UserId</response>
         /// <response code="400">If one or more validation errors occurred</response>
         /// <response code="500">If something goes wrong</response> 
@@ -128,11 +125,6 @@ namespace TestApi.Api.V1.Controllers
                 return BadRequest("Hasło powinno mieć minimum 6 znaków.");
             }
 
-            using var db = _dbContextFactory.Create();
-            if (!db.Cities.Any(x => x.CityId == model.CityId))
-            {
-                return BadRequest("Miasto nie istnieje.");
-            }
 
             var searchData = new List<string>();
             searchData.AddIfNotEmpty(model.FirstName);
@@ -147,15 +139,10 @@ namespace TestApi.Api.V1.Controllers
                 Surname = model.Surname,
                 Phone = model.Phone,
                 Email = model.Email,
-                //CityId = model.CityId,
                 Password = model.Password,
                 SearchData = string.Join(" ", searchData)
             };
 
-            if(model.StreetId > 0)
-            {
-                //user.StreetId = model.StreetId;
-            }
             if (model.Age.GetValueOrDefault() > 0)
             {
                 user.Age = model.Age;
@@ -163,6 +150,7 @@ namespace TestApi.Api.V1.Controllers
 
             try
             {
+                using var db = _dbContextFactory.Create();
                 var id = db.InsertWithInt32Identity(user);
                 return Ok(new { UserId = id });
             }
@@ -172,20 +160,13 @@ namespace TestApi.Api.V1.Controllers
             }            
         }
 
-        //// POST: UserController/Edit/5
-        //[HttpPost]
-        //public IActionResult Edit(int id, IFormCollection collection)
-        //{
-        //    try
-        //    {
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    catch
-        //    {
-        //        return Ok();
-        //    }
-        //}
-
+        /// <summary>
+        /// Delete user by userId
+        /// </summary>
+        /// <param name="id">User Id</param>
+        /// <response code="200">Returns true if usere is deleted</response>
+        /// <response code="404">If user not found</response>     
+        /// <response code="500">If something goes wrong</response> 
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -195,7 +176,7 @@ namespace TestApi.Api.V1.Controllers
                 var result = db.Users.Delete(x => x.UserId == id);
                 if (result > 0)
                 {
-                    return Ok();
+                    return Ok(true);
                 }
                 return NotFound();
             }
@@ -204,7 +185,13 @@ namespace TestApi.Api.V1.Controllers
                 return BadRequest(ex.Message);
             }
         }
-        
+
+        /// <summary>
+        /// Attaches address to user
+        /// </summary>
+        /// <param name="id">User id</param> 
+        /// <response code="200">Returns true if address is attached</response>
+        /// <response code="404">If user not found</response>     
         [HttpPost("{id}/addresses")]
         public IActionResult AddAddress(int id, AddAddressRequest model)
         {
@@ -222,6 +209,10 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Adres nie istnieje.");
             }
+            if (db.UsersLAddresses.Any(x => x.AddressId == model.AddressId && x.UserId == model.UserId))
+            {
+                return BadRequest("Użytkownik ma już przypisany taki adres.");
+            }
 
             var userAddress = new UsersLAddresses
             {
@@ -232,6 +223,12 @@ namespace TestApi.Api.V1.Controllers
             return Ok(db.Insert(userAddress) > 0);
         }
 
+        /// <summary>
+        /// Detaches address from user
+        /// </summary>
+        /// <param name="id">User id</param> 
+        /// <response code="200">Returns true if address is detached</response>
+        /// <response code="404">If user not found or user id is not existing</response>     
         [HttpDelete("{id}/addresses")]
         public IActionResult DeleteAddress(int id, DeleteAddressRequest model)
         {
@@ -250,6 +247,11 @@ namespace TestApi.Api.V1.Controllers
             return Ok(deletedCount > 0);
         }
 
+        /// <summary>
+        /// Return users addresses
+        /// </summary>
+        /// <param name="id">User id</param> 
+        /// <response code="200">Returns users addresses list</response>
         [HttpGet("{id}/addresses")]
         public IActionResult GetAddresses(int id)
         {
