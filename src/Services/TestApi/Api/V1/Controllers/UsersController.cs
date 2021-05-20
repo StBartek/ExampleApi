@@ -2,11 +2,9 @@
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
-using TestApi.Data;
 using TestApi.Models.User;
 using TestApi.Extensions;
 using System;
-using TestApi.Models;
 using Database;
 using LinqToDB;
 using System.Text.RegularExpressions;
@@ -40,6 +38,10 @@ namespace TestApi.Api.V1.Controllers
             if (!string.IsNullOrEmpty(paramsData.FirstName))
             {
                 query = query.Where(x => x.FirstName.Contains(paramsData.FirstName, StringComparison.InvariantCultureIgnoreCase)); 
+            }
+            if (!string.IsNullOrEmpty(paramsData.Surname))
+            {
+                query = query.Where(x => x.Surname.Contains(paramsData.Surname, StringComparison.InvariantCultureIgnoreCase));
             }
 
             if (!string.IsNullOrEmpty(paramsData.Email))
@@ -92,7 +94,6 @@ namespace TestApi.Api.V1.Controllers
         ///     {
         ///        "firstName": "jola",
         ///        "surname": "Nowakowska",
-        ///        "phone": 502502502,
         ///        "email": "jola@o2.pl",
         ///        "age": 21,
         ///        "password": "alamakota"
@@ -112,9 +113,15 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Nieprawidłowy adres email.");
             }
-            if(string.IsNullOrEmpty(model.FirstName) || model.FirstName.Length < 3)
+
+            using var db = _dbContextFactory.Create();
+            if (db.Users.Any(x => x.Email.Contains(model.Email)))
             {
-                return BadRequest("Imię powinno mieć minimum 3 znaki");
+                return BadRequest("Uzytkownik o podanym adresie email już istnieje.");
+            }
+            if (string.IsNullOrEmpty(model.FirstName) || model.FirstName.Length < 3)
+            {
+                return BadRequest("Imię powinno mieć minimum 3 znaki.");
             }
             if (string.IsNullOrEmpty(model.Surname) || model.Surname.Length < 3)
             {
@@ -124,33 +131,23 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Hasło powinno mieć minimum 6 znaków.");
             }
-
-
-            var searchData = new List<string>();
-            searchData.AddIfNotEmpty(model.FirstName);
-            searchData.AddIfNotEmpty(model.Surname);
-            searchData.AddIfNotEmpty(model.Phone);
-            searchData.AddIfNotEmpty(model.Email);
-            searchData.AddIfNotEmpty(model.Age.ToString());
+            if(model.Age.HasValue && model.Age <= 0) 
+            {
+                return BadRequest("Wiek powinien być cyfrą dodatnią.");
+            }
 
             var user = new Users
             {
                 FirstName = model.FirstName,
                 Surname = model.Surname,
-                Phone = model.Phone,
                 Email = model.Email,
                 Password = model.Password,
-                SearchData = string.Join(" ", searchData)
+                Age = model.Age                
             };
-
-            if (model.Age.GetValueOrDefault() > 0)
-            {
-                user.Age = model.Age;
-            }
+            SetSearchData(user);
 
             try
             {
-                using var db = _dbContextFactory.Create();
                 var id = db.InsertWithInt32Identity(user);
                 return Ok(new { UserId = id });
             }
@@ -158,6 +155,72 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest(ex.Message);                
             }            
+        }
+
+        private void SetSearchData(Users model)
+        {
+            var searchData = new List<string>();
+            searchData.AddIfNotEmpty(model.FirstName);
+            searchData.AddIfNotEmpty(model.Surname);
+            searchData.AddIfNotEmpty(model.Email);
+            searchData.AddIfNotEmpty(model.Age.ToString());
+            model.SearchData = string.Join(" ", searchData);
+        }
+
+        /// <summary>
+        /// Update user
+        /// </summary>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     Put /
+        ///     {
+        ///        "userId": 2,
+        ///        "firstName": "jola",
+        ///        "surname": "Nowakowska",
+        ///        "age": 21,
+        ///     }
+        ///
+        /// </remarks>
+        /// <param name="model"></param>
+        /// <response code="200">Returns true if update is success</response>
+        /// <response code="400">If one or more validation errors occurred</response>
+        /// <response code="500">If something goes wrong</response> 
+        [HttpPut("{id}")]
+        public IActionResult Update(int id, UpdateUserRequest model)
+        {
+            if(id != model.UserId)
+            {
+                return NotFound();
+            }
+            if (string.IsNullOrEmpty(model.FirstName) || model.FirstName.Length < 3)
+            {
+                return BadRequest("Imię powinno mieć minimum 3 znaki.");
+            }
+            if (string.IsNullOrEmpty(model.Surname) || model.Surname.Length < 3)
+            {
+                return BadRequest("Nazwisko powinno mieć minimum 3 znaki.");
+            }
+            if (model.Age.HasValue && model.Age <= 0)
+            {
+                return BadRequest("Wiek powinien być cyfrą dodatnią.");
+            }                     
+
+            try
+            {
+                using var db = _dbContextFactory.Create();
+                var dbUser = db.Users.FirstOrDefault(x => x.UserId == id);
+                dbUser.FirstName = model.FirstName;
+                dbUser.Surname = model.Surname;
+                dbUser.Age = model.Age;
+                SetSearchData(dbUser);
+                db.Update(dbUser);
+               return Ok(true);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>

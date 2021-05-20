@@ -23,14 +23,15 @@ namespace Database
 	/// </summary>
 	public partial class TestApiDb : LinqToDB.Data.DataConnection
 	{
-		public ITable<Addresses>       Addresses       { get { return this.GetTable<Addresses>(); } }
-		public ITable<Cities>          Cities          { get { return this.GetTable<Cities>(); } }
-		public ITable<Claims>          Claims          { get { return this.GetTable<Claims>(); } }
-		public ITable<Contacts>        Contacts        { get { return this.GetTable<Contacts>(); } }
-		public ITable<DicContactType>  DicContactType  { get { return this.GetTable<DicContactType>(); } }
-		public ITable<Streets>         Streets         { get { return this.GetTable<Streets>(); } }
-		public ITable<Users>           Users           { get { return this.GetTable<Users>(); } }
-		public ITable<UsersLAddresses> UsersLAddresses { get { return this.GetTable<UsersLAddresses>(); } }
+		public ITable<Addresses>            Addresses            { get { return this.GetTable<Addresses>(); } }
+		public ITable<Cities>               Cities               { get { return this.GetTable<Cities>(); } }
+		public ITable<Claims>               Claims               { get { return this.GetTable<Claims>(); } }
+		public ITable<ClaimsLUserAddresses> ClaimsLUserAddresses { get { return this.GetTable<ClaimsLUserAddresses>(); } }
+		public ITable<Contacts>             Contacts             { get { return this.GetTable<Contacts>(); } }
+		public ITable<DicContactType>       DicContactType       { get { return this.GetTable<DicContactType>(); } }
+		public ITable<Streets>              Streets              { get { return this.GetTable<Streets>(); } }
+		public ITable<Users>                Users                { get { return this.GetTable<Users>(); } }
+		public ITable<UsersLAddresses>      UsersLAddresses      { get { return this.GetTable<UsersLAddresses>(); } }
 
 		public TestApiDb()
 		{
@@ -84,11 +85,10 @@ namespace Database
 	[Table(Schema="dbo", Name="Cities")]
 	public partial class Cities
 	{
-		[Column(             DataType=DataType.Int32),                PrimaryKey,  Identity] public int    CityId        { get; set; } // int
-		[Column(             DataType=DataType.NVarChar, Length=100), NotNull              ] public string Name          { get; set; } // nvarchar(100)
-		[Column(             DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode      { get; set; } // nvarchar(6)
-		[Column(             DataType=DataType.Int32),                   Nullable          ] public int?   ResidentCount { get; set; } // int
-		[Column("moja dupa", DataType=DataType.NChar,    Length=10),     Nullable          ] public string MojaDupa      { get; set; } // nchar(10)
+		[Column(DataType=DataType.Int32),                PrimaryKey,  Identity] public int    CityId        { get; set; } // int
+		[Column(DataType=DataType.NVarChar, Length=100), NotNull              ] public string Name          { get; set; } // nvarchar(100)
+		[Column(DataType=DataType.NVarChar, Length=6),      Nullable          ] public string PostCode      { get; set; } // nvarchar(6)
+		[Column(DataType=DataType.Int32),                   Nullable          ] public int?   ResidentCount { get; set; } // int
 
 		#region Associations
 
@@ -111,10 +111,42 @@ namespace Database
 	public partial class Claims
 	{
 		[Column(DataType=DataType.Guid),                            PrimaryKey, NotNull] public Guid     ClaimId     { get; set; } // uniqueidentifier
-		[Column(DataType=DataType.Int32),                                       NotNull] public int      TypeId      { get; set; } // int
 		[Column(DataType=DataType.DateTime),                                    NotNull] public DateTime CreatedDate { get; set; } // datetime
 		[Column(DataType=DataType.Decimal,  Precision=18, Scale=2),             NotNull] public decimal  Amount      { get; set; } // decimal(18, 2)
 		[Column(DataType=DataType.NChar,    Length=10),                         NotNull] public string   Description { get; set; } // nchar(10)
+
+		#region Associations
+
+		/// <summary>
+		/// FK_ClaimsLUserAddresses_Claims_BackReference
+		/// </summary>
+		[Association(ThisKey="ClaimId", OtherKey="ClaimId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<ClaimsLUserAddresses> ClaimsLUserAddresses { get; set; }
+
+		#endregion
+	}
+
+	[Table(Schema="dbo", Name="ClaimsLUserAddresses")]
+	public partial class ClaimsLUserAddresses
+	{
+		[Column(DataType=DataType.Guid), NotNull] public Guid ClaimId       { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Guid), NotNull] public Guid UserAddressId { get; set; } // uniqueidentifier
+
+		#region Associations
+
+		/// <summary>
+		/// FK_ClaimsLUserAddresses_Claims
+		/// </summary>
+		[Association(ThisKey="ClaimId", OtherKey="ClaimId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_ClaimsLUserAddresses_Claims", BackReferenceName="ClaimsLUserAddresses")]
+		public Claims Claim { get; set; }
+
+		/// <summary>
+		/// FK_ClaimsLUserAddresses_UsersLAddresses
+		/// </summary>
+		[Association(ThisKey="UserAddressId", OtherKey="UserAddressId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_ClaimsLUserAddresses_UsersLAddresses", BackReferenceName="ClaimsLUserAddresses")]
+		public UsersLAddresses UserAddress { get; set; }
+
+		#endregion
 	}
 
 	[Table(Schema="dbo", Name="Contacts")]
@@ -194,7 +226,6 @@ namespace Database
 		[Column(DataType=DataType.Int32),                    Nullable          ] public int?   Age        { get; set; } // int
 		[Column(DataType=DataType.NVarChar, Length=50),   NotNull              ] public string Password   { get; set; } // nvarchar(50)
 		[Column(DataType=DataType.NVarChar, Length=2000),    Nullable          ] public string SearchData { get; set; } // nvarchar(2000)
-		[Column(DataType=DataType.NVarChar, Length=12),      Nullable          ] public string Phone      { get; set; } // nvarchar(12)
 
 		#region Associations
 
@@ -216,8 +247,11 @@ namespace Database
 	[Table(Schema="dbo", Name="UsersLAddresses")]
 	public partial class UsersLAddresses
 	{
-		[Column(DataType=DataType.Int32), NotNull] public int  UserId    { get; set; } // int
-		[Column(DataType=DataType.Guid),  NotNull] public Guid AddressId { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Guid),                            PrimaryKey,  NotNull] public Guid     UserAddressId   { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Int32),                                        NotNull] public int      UserId          { get; set; } // int
+		[Column(DataType=DataType.Guid),                                         NotNull] public Guid     AddressId       { get; set; } // uniqueidentifier
+		[Column(DataType=DataType.Decimal, Precision=13, Scale=11),    Nullable         ] public decimal? AssetPercentage { get; set; } // decimal(13, 11)
+		[Column(DataType=DataType.Boolean),                                      NotNull] public bool     Inhabit         { get; set; } // bit
 
 		#region Associations
 
@@ -226,6 +260,12 @@ namespace Database
 		/// </summary>
 		[Association(ThisKey="AddressId", OtherKey="AddressId", CanBeNull=false, Relationship=Relationship.ManyToOne, KeyName="FK_UsersLAddresses_Addresses", BackReferenceName="UsersLAddresses")]
 		public Addresses Address { get; set; }
+
+		/// <summary>
+		/// FK_ClaimsLUserAddresses_UsersLAddresses_BackReference
+		/// </summary>
+		[Association(ThisKey="UserAddressId", OtherKey="UserAddressId", CanBeNull=true, Relationship=Relationship.OneToMany, IsBackReference=true)]
+		public IEnumerable<ClaimsLUserAddresses> ClaimsLUserAddresses { get; set; }
 
 		/// <summary>
 		/// FK_UsersLAddresses_Users
@@ -278,6 +318,12 @@ namespace Database
 		{
 			return table.FirstOrDefault(t =>
 				t.UserId == UserId);
+		}
+
+		public static UsersLAddresses Find(this ITable<UsersLAddresses> table, Guid UserAddressId)
+		{
+			return table.FirstOrDefault(t =>
+				t.UserAddressId == UserAddressId);
 		}
 	}
 }

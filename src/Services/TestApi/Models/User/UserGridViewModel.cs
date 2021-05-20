@@ -26,7 +26,6 @@ namespace TestApi.Models.User
             UserId = user.UserId;
             FirstName = user.FirstName;
             Surname = user.Surname;
-            Phone = user.Phone;
             Email = user.Email;
             Age = user.Age;
             //CityId = user.CityId;

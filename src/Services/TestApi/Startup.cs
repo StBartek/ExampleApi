@@ -29,7 +29,11 @@ namespace TestApi
             var appSettings = _config.GetSection("AppSettings").Get<AppSettings>();
             //services.AddSingleton(appSettings);
 
-            services.AddControllers(); // rejestracja w IoC WebApiControlerów
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new TrimStringConverter());
+                });
             services.AddMemoryCache(); // rejestracja w IoC MemoryCache
 
             services.AddLogging();
