@@ -9,11 +9,13 @@ using TestApi.Helpers;
 using TestApi.Utils;
 using LinqToDB.Data;
 using Database;
+using Microsoft.Net.Http.Headers;
 
 namespace TestApi
 {
     public class Startup
     {
+        readonly string AllowLocalhost = "_allowLocalhost";
         public IConfiguration _config { get; }
         public Startup(IConfiguration configuration)
         {
@@ -42,6 +44,17 @@ namespace TestApi
 
             services.AddAutoMapper(typeof(Startup));
             services.AddSwagger();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy(name: AllowLocalhost,
+                                  builder =>
+                                  {
+                                      builder.WithOrigins("http://localhost:3000")
+                                        .WithHeaders(HeaderNames.ContentType, "x-custom-header")
+                                        .WithMethods("POST", "PUT", "DELETE", "GET", "OPTIONS");
+                                  });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -57,6 +70,7 @@ namespace TestApi
 
             app.UseRouting();
             app.UseAuthorization();
+            app.UseCors(AllowLocalhost);
 
             app.UseEndpoints(endpoints =>
             {
