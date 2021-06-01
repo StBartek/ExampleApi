@@ -18,15 +18,15 @@ namespace TestApi.Models.User
 
         public UserWithContactViewModel(Db.Contacts contact)
         {
-            UserId = contact.User.UserId;
-            FirstName = contact.User.FirstName;
-            Surname = contact.User.Surname;
+            UserId = contact.User?.UserId;
+            FirstName = contact.User?.FirstName;
+            Surname = contact.User?.Surname;
             ContactId = contact.ContactId;
             ContactTypeId = contact.TypeId;
             ContactValue = contact.Value;
         }
 
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public string FirstName { get; set; }
         public string Surname { get; set; }
         public int? ContactId { get; set; }

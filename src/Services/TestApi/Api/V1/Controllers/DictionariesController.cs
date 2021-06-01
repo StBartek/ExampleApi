@@ -21,7 +21,7 @@ namespace TestApi.Api.V1.Controllers
             _dbContextFactory = dbContextFactory;
         }
 
-        [HttpGet("contacttypes")]
+        [HttpGet("contact-types")]
         public IActionResult Index()
         {
             using var db = _dbContextFactory.Create();
@@ -30,6 +30,5 @@ namespace TestApi.Api.V1.Controllers
                 .ToList();
             return Ok(data);
         }
-
     }
 }

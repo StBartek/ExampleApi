@@ -94,9 +94,13 @@ namespace TestApi.Api.V1.Controllers
         {
             using var db = _dbContextFactory.Create();
 
-            if (string.IsNullOrEmpty(model.Value) || model.Value.Length < 5)
+            if (string.IsNullOrEmpty(model.Value))
             {
-                return BadRequest("Hasło powinno mieć minimum 5 znaków.");
+                return BadRequest("Wartość kontaktu nie została uzupełniona");
+            }
+            if (!model.TypeId.HasValue)
+            {
+                return BadRequest("Typ kontaktu nie został podany");
             }
             if (!db.DicContactType.Any(x => x.DicContactTypeId == model.TypeId))
             {
@@ -106,11 +110,15 @@ namespace TestApi.Api.V1.Controllers
             {
                 return BadRequest("Użytkownik nie istnieje.");
             }
+            if (db.Contacts.Any(x => x.UserId == model.UserId && x.TypeId == model.TypeId))
+            {
+                return BadRequest("Użytkownik posiada już kontakt takiego typu.");
+            }
 
             var contact = new Contacts
             {
                 Value = model.Value,
-                TypeId = model.TypeId,
+                TypeId = model.TypeId.Value,
             };
             if (model.UserId.HasValue)
             {
@@ -129,6 +137,7 @@ namespace TestApi.Api.V1.Controllers
         ///
         ///     Put /
         ///     {
+        ///        "contactId": 2,
         ///        "userId": "1"
         ///     }
         ///
@@ -141,10 +150,23 @@ namespace TestApi.Api.V1.Controllers
         [HttpPut("{id}")]
         public IActionResult Update(int id, UpdateContactModel model)
         {
-            using var db = _dbContextFactory.Create();
-            if (!db.Users.Any(x => x.UserId == model.UserId))
+            if(id != model.ContactId)
             {
-                return BadRequest("Użytkownik nie istnieje.");
+                return NotFound();
+            }
+
+            using var db = _dbContextFactory.Create();
+            if (model.UserId.HasValue)
+            {
+                if (!db.Users.Any(x => x.UserId == model.UserId))
+                {
+                    return BadRequest("Użytkownik nie istnieje.");
+                }
+                var contact = db.Contacts.FirstOrDefault(x => x.ContactId == id);
+                if (db.Contacts.Any(x => x.ContactId != id && x.UserId == model.UserId && x.TypeId == contact.TypeId))
+                {
+                    return BadRequest("Użytkownik posiad już kontak takiego typu.");
+                }
             }
 
             var updateCount = db.Contacts.Where(x => x.ContactId == id)
