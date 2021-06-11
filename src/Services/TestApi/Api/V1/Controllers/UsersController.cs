@@ -9,6 +9,7 @@ using Database;
 using LinqToDB;
 using System.Text.RegularExpressions;
 using TestApi.Models.Addresses;
+using TestApi.Models;
 
 namespace TestApi.Api.V1.Controllers
 {
@@ -173,7 +174,7 @@ namespace TestApi.Api.V1.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     Put /
+        ///     Patch /
         ///     {
         ///        "userId": 2,
         ///        "firstName": "jola",
@@ -186,7 +187,7 @@ namespace TestApi.Api.V1.Controllers
         /// <response code="200">Returns true if update is success</response>
         /// <response code="400">If one or more validation errors occurred</response>
         /// <response code="500">If something goes wrong</response> 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public IActionResult Update(int id, UpdateUserRequest model)
         {
             if(id != model.UserId)
@@ -326,6 +327,16 @@ namespace TestApi.Api.V1.Controllers
                 .Select(x => new BaseAddressViewModel(x.Address))
                 .ToList();
             return Ok(userAddresses);
+        }
+
+        [HttpGet("select")]
+        public IActionResult UserForAutocomplete()
+        {
+            using var db = _dbContextFactory.Create();
+            var data = db.Users
+                .Select(x => new SelectViewModel(x.UserId, $"{x.FirstName} {x.Surname}"))
+                .ToList();
+            return Ok(data);
         }
     }
 }

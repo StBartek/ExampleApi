@@ -135,7 +135,7 @@ namespace TestApi.Api.V1.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     Put /
+        ///     Patch /
         ///     {
         ///        "contactId": 2,
         ///        "userId": "1"
@@ -147,7 +147,7 @@ namespace TestApi.Api.V1.Controllers
         /// <response code="200">Returns true if contact is updated</response>
         /// <response code="400">If one or more validation errors occurred</response>
         /// <response code="500">If something goes wrong</response> 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public IActionResult Update(int id, UpdateContactModel model)
         {
             if(id != model.ContactId)

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TestApi.Models.Addresses;
 using TestApi.Models.User;
@@ -72,24 +73,46 @@ namespace TestApi.Api.V1.Controllers
         public ActionResult Create(CreateAddressModel model)
         {
             using var db = _dbContextFactory.Create();
-           
+
+            if (!model.CityId.HasValue)
+            {
+                return BadRequest("Miejscowość nie została podana.");
+            }
             if (!db.Cities.Any(x => x.CityId == model.CityId))
             {
-                return BadRequest("Miasto nie istnieje.");
+                return BadRequest("Miejscowość nie istnieje.");
             }
-            if (model.StreetId.HasValue && !db.Streets.Any(x => x.StreetId == model.StreetId))
+            if (model.StreetId.HasValue)
             {
-                return BadRequest("Ulica nie istnieje.");
+                var street = db.Streets.FirstOrDefault(x => x.StreetId == model.StreetId);
+                if(street == null)
+                {
+                    return BadRequest("Ulica nie istnieje.");
+                }
+                if(street.CityId != model.CityId)
+                {
+                    return BadRequest("Wybrana ulica nie znajduje się w wybranym mieście.");
+                }
             }
             if (string.IsNullOrEmpty(model.HouseNo))
             {
-                return BadRequest("Nie podano numeru domu.");
+                return BadRequest("Nie podano numeru budynku.");
+            }
+
+            var addresses = db.Addresses
+                .Where(x => x.CityId == model.CityId && x.StreetId == model.StreetId && x.HouseNo == model.HouseNo)
+                .ToList();
+
+            var error = BaseValid(model, addresses);
+            if (!string.IsNullOrEmpty(error))
+            {
+                return BadRequest(error);
             }
 
             var address = new Addresses
             {
                 AddressId = Guid.NewGuid(),
-                CityId = model.CityId,
+                CityId = model.CityId.Value,
                 StreetId = model.StreetId,
                 HouseNo = model.HouseNo,
                 FlatNo = model.FlatNo
@@ -99,16 +122,85 @@ namespace TestApi.Api.V1.Controllers
             return Ok(address.AddressId);
         }
 
-        [HttpPut("{id}")]
+        private string BaseValid(CreateAddressModel model, List<Addresses> addresses) 
+        {
+            if (string.IsNullOrEmpty(model.FlatNo))
+            {
+                if (addresses.Any(x => !string.IsNullOrEmpty(x.FlatNo)))
+                {
+                    return "Proszę podać numer lokalu, pod podanym numerem budynku istnieją adresy z podanym numerem lokalu.";
+                }
+                if (addresses.Any())
+                {
+                    return "Podany adres już istnieje.";
+                }
+            }
+            else
+            {
+                if (addresses.Any(x => string.IsNullOrEmpty(x.FlatNo)))
+                {
+                    return "Pod podanym numerem budynku istnieje adres bez numeru lokalu.";
+                }
+                if (addresses.Any(x => x.FlatNo == model.FlatNo))
+                {
+                    return "Podany adres już istnieje.";
+                }
+            }
+
+            if (string.IsNullOrEmpty(model.HouseNo))
+            {
+                return "Numer budynku jest wymagany.";
+            }
+
+            Regex regex = new Regex(@"[a-zA-Z0-9]+$");
+            if (!regex.IsMatch(model.HouseNo))
+            {
+                return "Numer budynku może zawierać wyłącznie litery i cyfry.";
+            }
+            if (!string.IsNullOrEmpty(model.FlatNo) &&  !regex.IsMatch(model.FlatNo))
+            {
+                return "Numer lokalu może zawierać wyłącznie litery i cyfry";
+            }
+            return null;
+        }
+
+        [HttpPatch("{id}")]
         public ActionResult Edit(Guid id, UpdateAddressModel model)
         {
             if (id != model.AddressId)
             {
-                return BadRequest();
+                return NotFound();
             }
 
             using var db = _dbContextFactory.Create();
+            var curentAddress = db.Addresses.FirstOrDefault(x => x.AddressId == model.AddressId);
+            if(curentAddress == null)
+            {
+                return NotFound();
+            }
+            var addresses = db.Addresses
+                .Where(x => x.AddressId != curentAddress.AddressId 
+                    && x.CityId == curentAddress.CityId 
+                    && x.StreetId == curentAddress.StreetId 
+                    && x.HouseNo == model.HouseNo         
+               ).ToList();
+
+            var modelToValid = new CreateAddressModel 
+            {
+                CityId = curentAddress.CityId,
+                StreetId =curentAddress.StreetId,
+                HouseNo = model.HouseNo,
+                FlatNo =model.FlatNo
+            };
+
+            var error = BaseValid(modelToValid, addresses);
+            if (!string.IsNullOrEmpty(error))
+            {
+                return BadRequest(error);
+            }
+
             var result = db.Addresses.Where(x => x.AddressId == model.AddressId)
+                .Set(x => x.HouseNo, model.HouseNo)
                 .Set(x => x.FlatNo, model.FlatNo)
                 .Update();
 

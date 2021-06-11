@@ -7,7 +7,7 @@ namespace TestApi.Models.Addresses
 {
     public class CreateAddressModel
     {
-        public int CityId { get; set; }
+        public int? CityId { get; set; }
         public int? StreetId { get; set; }
         public string HouseNo { get; set; }
         public string FlatNo { get; set; }

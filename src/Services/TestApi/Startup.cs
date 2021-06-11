@@ -52,7 +52,7 @@ namespace TestApi
                                   {
                                       builder.WithOrigins("http://localhost:3000")
                                         .WithHeaders(HeaderNames.ContentType, "x-custom-header")
-                                        .WithMethods("POST", "PUT", "DELETE", "GET", "OPTIONS");
+                                        .WithMethods("POST", "PUT", "PATCH", "DELETE", "GET", "OPTIONS");
                                   });
             });
         }
