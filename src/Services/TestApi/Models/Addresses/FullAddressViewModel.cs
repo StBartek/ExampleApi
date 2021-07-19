@@ -10,11 +10,12 @@ namespace TestApi.Models.Addresses
     {
         public FullAddressViewModel(Db.Addresses addresses)
         {
+            AddressId = addresses.AddressId;
             CityId = addresses.CityId;
             CityName = addresses.City.Name;
             StreetId = addresses.StreetId;
             StreetName = addresses.Street?.Name;
-            HomeNo = addresses.HouseNo;
+            HouseNo = addresses.HouseNo;
             FlatNo = addresses.FlatNo;
             Users = addresses.UsersLAddresses.Select(x => new UserWithContactViewModel(x.User)).ToList();
         }
@@ -24,7 +25,7 @@ namespace TestApi.Models.Addresses
         public string CityName { get; set; }
         public int? StreetId { get; set; }
         public string StreetName { get; set; }
-        public string HomeNo { get; set; }
+        public string HouseNo { get; set; }
         public string FlatNo { get; set; }
         public List<UserWithContactViewModel> Users { get; set; }
     }

@@ -28,7 +28,7 @@ namespace TestApi.Api.V1.Controllers
             using var db = _dbContextFactory.Create();
             return Ok(db.Streets.Where(x => x.CityId == streetParams.CityId)
                 .Select(x => new SelectViewModel { 
-                    Id = x.CityId,
+                    Id = x.StreetId,
                     Text = x.Name
                 })
                 .ToList());

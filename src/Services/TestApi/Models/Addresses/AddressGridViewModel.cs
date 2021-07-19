@@ -13,7 +13,7 @@ namespace TestApi.Models.Addresses
             CityName = addresses.City.Name;
             StreetId = addresses.StreetId;
             StreetName = addresses.Street?.Name;
-            HomeNo = addresses.HouseNo;
+            HouseNo = addresses.HouseNo;
             FlatNo = addresses.FlatNo;
             InhabitantsNumber = addresses.UsersLAddresses.Count();
         }
@@ -23,7 +23,7 @@ namespace TestApi.Models.Addresses
         public string CityName { get; set; }
         public int? StreetId { get; set; }
         public string StreetName { get; set; }
-        public string HomeNo { get; set; }
+        public string HouseNo { get; set; }
         public string FlatNo { get; set; }
         public int InhabitantsNumber { get; set; }
     }

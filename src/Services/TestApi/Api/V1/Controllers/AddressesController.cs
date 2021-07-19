@@ -48,7 +48,9 @@ namespace TestApi.Api.V1.Controllers
                 query = query.Where(x => x.HouseNo.Contains(gridParams.HouseNo));
             }
 
-            var result = query.Select(x => new AddressGridViewModel(x)).ToList();
+            var result = query.OrderBy(x => x.City.Name).Skip(gridParams.CurrentPage * 10 - 10).Take(10)
+                .Select(x => new AddressGridViewModel(x))
+                .ToList();
             return Ok(result);
         }
 
@@ -72,6 +74,8 @@ namespace TestApi.Api.V1.Controllers
         [HttpPost]
         public ActionResult Create(CreateAddressModel model)
         {
+            model.FlatNo = string.IsNullOrEmpty(model.FlatNo) ? null : model.FlatNo;
+
             using var db = _dbContextFactory.Create();
 
             if (!model.CityId.HasValue)
@@ -94,6 +98,11 @@ namespace TestApi.Api.V1.Controllers
                     return BadRequest("Wybrana ulica nie znajduje się w wybranym mieście.");
                 }
             }
+            else if (db.Streets.Any(x => x.CityId == model.CityId))
+            {
+                return BadRequest("Wybrana miejscowość posiada ulice.");
+            }
+            
             if (string.IsNullOrEmpty(model.HouseNo))
             {
                 return BadRequest("Nie podano numeru budynku.");
@@ -172,6 +181,8 @@ namespace TestApi.Api.V1.Controllers
                 return NotFound();
             }
 
+            model.FlatNo = string.IsNullOrEmpty(model.FlatNo) ? null : model.FlatNo;
+
             using var db = _dbContextFactory.Create();
             var curentAddress = db.Addresses.FirstOrDefault(x => x.AddressId == model.AddressId);
             if(curentAddress == null)
@@ -188,9 +199,9 @@ namespace TestApi.Api.V1.Controllers
             var modelToValid = new CreateAddressModel 
             {
                 CityId = curentAddress.CityId,
-                StreetId =curentAddress.StreetId,
+                StreetId = curentAddress.StreetId,
                 HouseNo = model.HouseNo,
-                FlatNo =model.FlatNo
+                FlatNo = model.FlatNo
             };
 
             var error = BaseValid(modelToValid, addresses);

@@ -165,7 +165,7 @@ namespace TestApi.Api.V1.Controllers
                 var contact = db.Contacts.FirstOrDefault(x => x.ContactId == id);
                 if (db.Contacts.Any(x => x.ContactId != id && x.UserId == model.UserId && x.TypeId == contact.TypeId))
                 {
-                    return BadRequest("Użytkownik posiad już kontak takiego typu.");
+                    return BadRequest("Użytkownik posiada już kontakt takiego typu.");
                 }
             }
 

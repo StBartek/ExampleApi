@@ -19,7 +19,7 @@ namespace Database
 	/// <summary>
 	/// Database       : TestApiDb
 	/// Data Source    : localhost
-	/// Server Version : 14.00.3370
+	/// Server Version : 14.00.3391
 	/// </summary>
 	public partial class TestApiDb : LinqToDB.Data.DataConnection
 	{

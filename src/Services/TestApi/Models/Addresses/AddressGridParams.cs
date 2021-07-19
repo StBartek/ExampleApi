@@ -5,5 +5,6 @@
         public int? CityId { get; set; }
         public int? StreetId { get; set; }
         public string HouseNo { get; set; }
+        public int CurrentPage { get; set; }
     }
 }
