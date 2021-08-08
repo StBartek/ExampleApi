@@ -60,7 +60,7 @@ namespace TestApi.Api.V1.Controllers
                 query = query.Where(x => x.Age == paramsData.Age);
             }
 
-            var result = query.ToList();
+            var result = query.OrderBy(x => x.Surname).Skip(paramsData.CurrentPage * 10 - 10).Take(10).ToList();
 
             return Ok(result);
         }
@@ -108,17 +108,22 @@ namespace TestApi.Api.V1.Controllers
         [HttpPost]
         public IActionResult Create(CreateUserRequest model)
         {
+            if (string.IsNullOrEmpty(model.Email))
+            {
+                return BadRequest("Nie uzupełniono adresu e-mail.");
+            }
+
             string pattern = @"^(?!\.)(""([^""\r\\]|\\[""\r\\])*""|" + @"([-a-z0-9!#$%&'*+/=?^_`{|}~]|(?<!\.)\.)*)(?<!\.)" + @"@[a-z0-9][\w\.-]*[a-z0-9]\.[a-z][a-z\.]*[a-z]$";
             var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-            if (!regex.IsMatch(model.Email ?? string.Empty))
+            if (!regex.IsMatch(model.Email))
             {
-                return BadRequest("Nieprawidłowy adres email.");
+                return BadRequest("Adres e-mail powinien mieć format xxx@yyy.yyy");
             }
 
             using var db = _dbContextFactory.Create();
             if (db.Users.Any(x => x.Email.Contains(model.Email)))
             {
-                return BadRequest("Uzytkownik o podanym adresie email już istnieje.");
+                return BadRequest("Użytkownik o podanym adresie email już istnieje.");
             }
             if (string.IsNullOrEmpty(model.FirstName) || model.FirstName.Length < 3)
             {

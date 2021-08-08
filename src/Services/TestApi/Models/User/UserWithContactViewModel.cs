@@ -23,6 +23,7 @@ namespace TestApi.Models.User
             Surname = contact.User?.Surname;
             ContactId = contact.ContactId;
             ContactTypeId = contact.TypeId;
+            ContactType = contact.Type?.Name;
             ContactValue = contact.Value;
         }
 
@@ -32,5 +33,6 @@ namespace TestApi.Models.User
         public int? ContactId { get; set; }
         public string ContactValue { get; set; }
         public int? ContactTypeId { get; set; }
+        public string ContactType { get; set; }
     }
 }

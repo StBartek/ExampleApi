@@ -48,7 +48,9 @@ namespace TestApi.Api.V1.Controllers
                 query = query.Where(x => x.HouseNo.Contains(gridParams.HouseNo));
             }
 
-            var result = query.OrderBy(x => x.City.Name).Skip(gridParams.CurrentPage * 10 - 10).Take(10)
+            var result = query.OrderBy(x => x.City.Name)
+                .Skip(gridParams.CurrentPage * 10 - 10)
+                .Take(10)
                 .Select(x => new AddressGridViewModel(x))
                 .ToList();
             return Ok(result);
